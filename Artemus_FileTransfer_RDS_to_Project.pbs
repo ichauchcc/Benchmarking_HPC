@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Use to transfer files from rcos to Artemus
+# Need to specify  -from -to -N jobname
+
+# ~~~~~~Set up PBS ~~~~~~~~~~~~~~~~~
+
+# need a project ID from ICT support when applying for access
+#PBS -P RDS-SMS-WGSHCM-RW
+
+# 'select' number of nodes: and 'ncpus' number of cpus: and memory 
+#PBS -l select=1:ncpus=1:mem=4gb
+
+# set your minimum acceptable walltime=hours:minutes:seconds
+#PBS -l walltime=8:00:00
+
+# request data transfer queue
+#PBS -q dtq
+
+# Specify your email address to be notified of progress
+#PBS -M y.chang@centenary.org.au
+
+# To receive an email:
+#       - job is aborted: 'a' 
+#       - job begins execution: 'b'
+#       - job terminates: 'e'
+#       Note: Please ensure that the PBS -M option above is set.
+#PBS -m abe
+
+scp -r ${from} ${to}
+
+# ~~~~~~~Commands to execute~~~~~~~~~
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/ASX*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq filetransfer.pbs`
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/BCV*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq2 filetransfer.pbs`
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/DXO*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq3 filetransfer.pbs`
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/DUV*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq4 filetransfer.pbs`
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/DUO*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq5 filetransfer.pbs`
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/DQK*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq6 filetransfer.pbs`
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/CWX*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq7 filetransfer.pbs`
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/CUX*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq8 filetransfer.pbs`
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/CPN*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq9 filetransfer.pbs`
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/BVX*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq10 filetransfer.pbs`
+echo `qsub -v from="/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/BQE*",to="/scratch/WGSHCM/Rawdata" -N dtq_fastq11 filetransfer.pbs`
