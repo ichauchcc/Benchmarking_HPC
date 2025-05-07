@@ -53,8 +53,20 @@ echo 'puts [clock format [clock seconds] -format {%Y-%m-%d %T %Z} -timezone ":Au
 
 
 # ~~~~~~~Commands to execute~~~~~~~~~
+# cd /scratch/WGSHCM/tempBAMs/
+# ls *_R1.fastq.gz | sed 's/_R1.fastq.gz//g' | awk '{print"echo `qsub -v sample=\""$0"\" -N fastq2bam_"$0" Align_paired_humanRef.pbs`"}'
 # cd /project/WGSHCM/Scripts/
-# qsub -v sample="DRY1" -N DRY1_alignHost Align_paired_humanRef.pbs 
+# echo `qsub -v sample="ASX1" -N fastq2bam_ASX1 Align_paired_humanRef.pbs`
+# echo `qsub -v sample="BCV1" -N fastq2bam_BCV1 Align_paired_humanRef.pbs`
+# echo `qsub -v sample="BQE1" -N fastq2bam_BQE1 Align_paired_humanRef.pbs`
+# echo `qsub -v sample="BVX1" -N fastq2bam_BVX1 Align_paired_humanRef.pbs`
+# echo `qsub -v sample="CPN1" -N fastq2bam_CPN1 Align_paired_humanRef.pbs`
+# echo `qsub -v sample="CUX1" -N fastq2bam_CUX1 Align_paired_humanRef.pbs`
+# echo `qsub -v sample="CWX1" -N fastq2bam_CWX1 Align_paired_humanRef.pbs`
+# echo `qsub -v sample="DQK2" -N fastq2bam_DQK2 Align_paired_humanRef.pbs`
+# echo `qsub -v sample="DUO1" -N fastq2bam_DUO1 Align_paired_humanRef.pbs`
+# echo `qsub -v sample="DUV1" -N fastq2bam_DUV1 Align_paired_humanRef.pbs`
+# echo `qsub -v sample="DXO1" -N fastq2bam_DXO1 Align_paired_humanRef.pbs`
 
 
 
