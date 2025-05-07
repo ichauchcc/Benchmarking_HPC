@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# ExomeAlignment and haplotypecaller
+# Need to specify -v sample -v forward -v reverse and -N jobname
+
+# ~~~~~~Set up PBS ~~~~~~~~~~~~~~~~~
+
+# need a project ID from ICT support when applying for access
+#PBS -P RDS-SMS-MPSHCM-RW
+
+# give job a name
+# PBS -N fastqc
+
+# number of nodes and processors select=1:ncpus=2:mem=2GB is to select 2 processors from the same node with total memeory 2GB 
+
+#PBS -l select=1:ncpus=2:mem=8GB
+
+# set your minimum acceptable walltime=hours:minutes:seconds
+#PBS -l walltime=02:00:00
+
+# request queue
+#PBS -q defaultQ
+
+# Specify your email address to be notified of progress
+#PBS -M y.chang@centenary.org.au
+
+# To receive an email:
+#       - job is aborted: 'a' 
+#       - job begins execution: 'b'
+#       - job terminates: 'e'
+#       Note: Please ensure that the PBS -M option above is set.
+#PBS -m e
+
+
+# ~~~~~~~Load modules~~~~~~~~~~~~~~~~
+
+module load fastqc
+
+# ~~~~~~Set variables~~~~~~~~~~~~~~~~
+
+fastqpath=/scratch/MPSHCM/Rawdata
+
+fastqc ${fastqpath}/${forward} ${fastqpath}/${reverse} --threads 2 --outdir ${fastqpath} --noextract
+
+# ~~~~~~~Commands to execute~~~~~~~~~
+# submission of fastqc
+# ls *1.fastq.gz | cut -d "_" -f1 | awk '{print"echo `qsub -v sample=\""$0"\",forward=\""$0"_R1.fastq.gz\",reverse=\""$0"_R2.fastq.gz\" -N "$0_fqc" fastqc.pbs`"}'
+
+# echo `qsub -v sample="AD1FFPE_post",forward="AD1FFPE.R1.fq.gz",reverse="AD1FFPE.R2.fq.gz" -N AD1FFPE_post fastqc.pbs`
+# echo `qsub -v sample="AD1FFPE_pre",forward="AD1FFPE_1.fastq.gz",reverse="AD1FFPE_2.fastq.gz" -N AD1FFPE_pre fastqc.pbs`
