@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# Transfer a folder from RDS to Gadi
+# This will recreate your RDS path (/rds/PRJ-<rds_project>)
+# on Gadi in /scratch/<nci_project>
+
+#PBS -P ut47
+#PBS -N transfer
+#PBS -l walltime=6:00:00
+#PBS -l ncpus=1
+#PBS -l mem=8GB
+#PBS -W umask=022
+#PBS -q copyq
+#PBS -l wd
+#PBS -lstorage=scratch/ut47
+
+# RDS:
+remote_user=ycha1984
+remote_host=research-data-ext.sydney.edu.au
+
+# NOTE: Add a trailing slash (/) to remote_path if you don't want to create the
+# parent directory at the destination. 
+### remote_path=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq_DRY1/230404_A01221_0174_ML230697_23W000689_MAN-20230323_ILMNDNAPCRFREE_L002_R1.fastq.gz
+remote_path=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/ASX*
+remote_path1=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/BCV*
+remote_path2=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/DXO*
+remote_path3=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/DUV*
+remote_path4=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/DUO*
+remote_path5=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/DQK*
+remote_path6=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/CWX*
+remote_path7=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/CUX*
+remote_path8=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/CPN*
+remote_path9=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/BVX*
+remote_path10=/rds/PRJ-CGSP/WGS_38SUD_GRCh38/Fastq/BQE*
+
+# Gadi:
+### dest_path=/scratch/ut47/fastq
+dest_path=/scratch/ut47/Fastq-to-VCF/Fastq_Benchmark11
+
+# Copy folder with sftp
+# sftp -r ${remote_user}@${remote_host}:${remote_path} ${dest_path}
+
+# Copy files with sftp
+sftp ${remote_user}@${remote_host}:${remote_path} ${dest_path}
+sftp ${remote_user}@${remote_host}:${remote_path1} ${dest_path}
+sftp ${remote_user}@${remote_host}:${remote_path2} ${dest_path}
+sftp ${remote_user}@${remote_host}:${remote_path3} ${dest_path}
+sftp ${remote_user}@${remote_host}:${remote_path4} ${dest_path}
+sftp ${remote_user}@${remote_host}:${remote_path5} ${dest_path}
+sftp ${remote_user}@${remote_host}:${remote_path6} ${dest_path}
+sftp ${remote_user}@${remote_host}:${remote_path7} ${dest_path}
+sftp ${remote_user}@${remote_host}:${remote_path8} ${dest_path}
+sftp ${remote_user}@${remote_host}:${remote_path9} ${dest_path}
+sftp ${remote_user}@${remote_host}:${remote_path10} ${dest_path}
+
+####### To run this file
+# cd /g/data/ut47/Scripts/
+# qsub DataTransfer_RDSToGadi.pbs 
