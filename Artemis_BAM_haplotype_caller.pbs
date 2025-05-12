@@ -35,7 +35,6 @@ scripts=/project/WGSHCM/Scripts
 scratch=/scratch/WGSHCM
 vcf=${scratch}/tempVCFs
 vcf_project=/project/WGSHCM/tempVCFs
-bamdir=${scratch}/tempBAMs
 
 # ~~~~~~~Commands to execute~~~~~~~~~
 
@@ -100,7 +99,19 @@ echo "end Concatenate g.vcfs";
 echo 'puts [clock format [clock seconds] -format {%Y-%m-%d %T %Z} -timezone ":Australia/Sydney"]' | tclsh
 
 
+# ~~~~~~~execute file~~~~~~~~~
+# ls *.bam | sed 's/.bam//g' | awk '{print"echo `qsub -v sample=\""$0"\",bamdir=\"WGSHCM\" -N HC_"$0" VCGS_HC_v2.pbs`"}'
 
-
+echo `qsub -v sample="ASX1",bamdir="WGSHCM" -N HC_ASX1 VCGS_HC_v2.pbs`
+echo `qsub -v sample="BCV1",bamdir="WGSHCM" -N HC_BCV1 VCGS_HC_v2.pbs`
+echo `qsub -v sample="BQE1",bamdir="WGSHCM" -N HC_BQE1 VCGS_HC_v2.pbs`
+echo `qsub -v sample="BVX1",bamdir="WGSHCM" -N HC_BVX1 VCGS_HC_v2.pbs`
+echo `qsub -v sample="CPN1",bamdir="WGSHCM" -N HC_CPN1 VCGS_HC_v2.pbs`
+echo `qsub -v sample="CUX1",bamdir="WGSHCM" -N HC_CUX1 VCGS_HC_v2.pbs`
+echo `qsub -v sample="CWX1",bamdir="WGSHCM" -N HC_CWX1 VCGS_HC_v2.pbs`
+echo `qsub -v sample="DQK2",bamdir="WGSHCM" -N HC_DQK2 VCGS_HC_v2.pbs`
+echo `qsub -v sample="DUO1",bamdir="WGSHCM" -N HC_DUO1 VCGS_HC_v2.pbs`
+echo `qsub -v sample="DUV1",bamdir="WGSHCM" -N HC_DUV1 VCGS_HC_v2.pbs`
+echo `qsub -v sample="DXO1",bamdir="WGSHCM" -N HC_DXO1 VCGS_HC_v2.pbs`
 
 
