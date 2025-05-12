@@ -1,0 +1,121 @@
+#!/bin/bash
+
+# Use lumpy to find structural variants
+# Need to specify  -sample -N jobname
+# ~~~~~~Set up PBS ~~~~~~~~~~~~~~~~~
+
+# need a project ID from ICT support when applying for access
+#PBS -P RDS-SMS-WGSHCM-RW
+
+# 'select' number of nodes: and 'ncpus' number of cpus: and memory 
+#PBS -l select=1:ncpus=6:mem=48GB
+
+# set your minimum acceptable walltime=hours:minutes:seconds
+#PBS -l walltime=24:00:00
+
+# request queue
+#PBS -q defaultQ
+
+# Specify your email address to be notified of progress
+#PBS -M y.chang@centenary.org.au
+
+# To receive an email:
+#       - job is aborted: 'a' 
+#       - job begins execution: 'b'
+#       - job terminates: 'e'
+#       Note: Please ensure that the PBS -M option above is set.
+#PBS -m e
+
+# ~~~~~~~Load modules~~~~~~~~~~~~~~~~
+
+module load samtools/1.3.1
+module load lumpy-sv/0.2.12
+module load python/2.7.9
+module load bedtools/2.29.2
+
+# ~~~~~~Set variables~~~~~~~~~~~~~~~~
+
+path=/project/WGSHCM
+bam=${bamdir}
+outdir=${path}/Lumpy/${sample}
+lumpy=${path}/Lumpy
+targets=/project/CGSP/Targets
+scratch=/scratch/WGSHCM
+
+# ~~~~~~~Commands to execute~~~~~~~~~
+
+# 1. make a directory for the results
+mkdir -p ${outdir}
+mkdir -p ${scratch}/lp.${sample}
+
+# 2. Extract discordant reads for lumpy, sort and index
+samtools view -b -F 1294 /project/${bam}/tempBAMs/${sample}.bam | /project/MPSHCM/Applications/novocraft/novosort - --threads 6 --ram 6G --tmpdir ${scratch}/lp.${sample} --index --output ${outdir}/${sample}.discordant.pe.bam
+
+# 3. Extract split reads for lumpy and index
+mkdir -p ${scratch}/lp.${sample}
+
+samtools view -h /project/${bam}/tempBAMs/${sample}.bam | /usr/local/lumpy-sv/0.2.12/scripts/extractSplitReads_BwaMem -i stdin | samtools view -Sb - | /project/MPSHCM/Applications/novocraft/novosort - --threads 6 --ram 6G --tmpdir ${scratch}/lp.${sample} --index --output ${outdir}/${sample}.sr.sort.bam
+
+# 4. Define the paired end distribution
+samtools view /project/${bam}/tempBAMs/${sample}.bam | tail -n+100000 | /usr/local/lumpy-sv/0.2.12/scripts/pairend_distro.py -r 150 -X 4 -N 10000 -o ${outdir}/${sample}.realigned.histo 2>&1 | tee > ${outdir}/${sample}.distribution
+
+# 5. get the mean and stdev values from the .distribution file
+
+mean=`grep mean ${outdir}/${sample}.distribution | tr '.' ':' | cut -d ":" -f2`;
+stdev=`grep mean ${outdir}/${sample}.distribution | tr '.' ':' | cut -d ":" -f4`;
+
+# 6. Find min and max coverage
+
+python /usr/local/lumpy-sv/0.2.12/scripts/get_coverages.py ${outdir}/${sample}.discordant.pe.bam ${outdir}/${sample}.sr.sort.bam
+
+## HACK to get rid of scientific numbers (high coverage, so replace with 1000)
+awk '{if ($4 ~/+/) print $1"\t"$2"\t"$3"\t1000"; else print $0;}' ${outdir}/${sample}.discordant.pe.bam.coverage > ${outdir}/${sample}.discordant.pe.bam.coverage1
+
+mv ${outdir}/${sample}.discordant.pe.bam.coverage1 ${outdir}/${sample}.discordant.pe.bam.coverage
+
+awk '{if ($4 ~/+/) print $1"\t"$2"\t"$3"\t1000"; else print $0;}' ${outdir}/${sample}.sr.sort.bam.coverage > ${outdir}/${sample}.sr.sort.bam.coverage1
+
+mv ${outdir}/${sample}.sr.sort.bam.coverage1 ${outdir}/${sample}.sr.sort.bam.coverage 
+
+sleep 10
+# 7. Exclude regions with more than (n = 300 reads)
+
+python /usr/local/lumpy-sv/0.2.12/scripts/get_exclude_regions.py 300 ${outdir}/${sample}.exclude.bed ${outdir}/${sample}.discordant.pe.bam ${outdir}/${sample}.sr.sort.bam
+
+# 9. Run lumpy with exclude regions
+
+lumpy -b -mw 8 -t ${scratch}/lp.${sample} -tt 0.0 -x ${outdir}/${sample}.exclude.bed -pe bam_file:${outdir}/${sample}.discordant.pe.bam,histo_file:${outdir}/${sample}.realigned.histo,mean:${mean},stdev:${stdev},read_length:150,min_non_overlap:150,discordant_z:4,back_distance:20,weight:1,id:${sample}.pe,min_mapping_threshold:1 -sr bam_file:${outdir}/${sample}.sr.sort.bam,back_distance:20,weight:1,id:${sample}.sr,min_mapping_threshold:1 > ${outdir}/${sample}.pesr.exclude300.bedpe
+
+# 10. Filter deletions: i.e. get deletions that overlap any of the provided bed file intervals
+
+awk -v sample_id="${sample}" '{print $1"\t"$2"\t"$6"\t"$6-$2"\t"sample_id"\t"$0}' ${outdir}/${sample}.pesr.exclude300.bedpe | grep DELETION | intersectBed -a stdin -b ${targets}/${bed} -wa | uniq | sort -n -k4,4 > ${outdir}/${sample}.deletions.txt
+
+#awk '{print $1"\t"$2"\t"$6"\t"$6-$2"\tNSW9A\t"$0}' NSW9A.pesr.exclude150.bedpe | grep DELETION | intersectBed -a stdin -b /project/MPSHCM/TargetRegions/Arrhythmia_WGS_nogenes.bed -wa | uniq | sort -n -k4,4 > NSW9A.deletions.txt
+
+# 10. Filter duplications: i.e. get duplications that overlap any of the provided bed file intervals
+
+awk -v sample_id="${sample}" '{print $1"\t"$2"\t"$6"\t"$6-$2"\t"sample_id"\t"$0}' ${outdir}/${sample}.pesr.exclude300.bedpe | grep DUPLICATION | intersectBed -a stdin -b ${targets}/${bed} -wa | uniq | sort -n -k4,4 > ${outdir}/${sample}.duplications.txt
+
+# 11. Filter for inversions
+
+awk -v sample_id="${sample}" '{print $1"\t"$2"\t"$3"\t"sample_id"\t"$0"\n"$4"\t"$5"\t"$6"\t"sample_id"\t"$0}' ${outdir}/${sample}.pesr.exclude300.bedpe | grep INVERSION | intersectBed -a stdin -b ${targets}/${bed} -wa | uniq > ${outdir}/${sample}.inversions.txt
+
+# 12. Filter for translocations
+
+awk -v sample_id="${sample}" '{print $1"\t"$2"\t"$3"\t"sample_id"\t"$0"\n"$4"\t"$5"\t"$6"\t"sample_id"\t"$0}' ${outdir}/${sample}.pesr.exclude300.bedpe | grep INTERCHROM | intersectBed -a stdin -b ${targets}/${bed} -wa | uniq > ${outdir}/${sample}.translocations.txt
+
+rmdir ${scratch}/lp.${sample}
+
+
+# ~~~~~~~execute pbs file~~~~~~~~~
+echo `qsub -v sample="ASX1",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_ASX1 VCGS_lumpy.pbs`
+echo `qsub -v sample="BCV1",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_BCV1 VCGS_lumpy.pbs`
+echo `qsub -v sample="BQE1",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_BQE1 VCGS_lumpy.pbs`
+echo `qsub -v sample="BVX1",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_BVX1 VCGS_lumpy.pbs`
+echo `qsub -v sample="CPN1",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_CPN1 VCGS_lumpy.pbs`
+echo `qsub -v sample="CUX1",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_CUX1 VCGS_lumpy.pbs`
+echo `qsub -v sample="CWX1",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_CWX1 VCGS_lumpy.pbs`
+echo `qsub -v sample="DQK2",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_DQK2 VCGS_lumpy.pbs`
+echo `qsub -v sample="DUO1",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_DUO1 VCGS_lumpy.pbs`
+echo `qsub -v sample="DUV1",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_DUV1 VCGS_lumpy.pbs`
+echo `qsub -v sample="DXO1",bed="WholeGene_PaddedExome.SUDEP.bed",bamdir="WGSHCM" -N lp_DXO1 VCGS_lumpy.pbs`
