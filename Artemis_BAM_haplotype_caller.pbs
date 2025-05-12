@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# ~~~~~~Set up PBS ~~~~~~~~~~~~~~~~~
+# need a project ID from ICT support when applying for access
+#PBS -P RDS-SMS-WGSHCM-RW
+
+# number of nodes and processors nodes=1:ppn=2 is to select 2 processors from the same node 
+#PBS -l ncpus=8
+
+# set your maximum walltime=hours:minutes:seconds
+#PBS -l walltime=30:00:00
+
+# request memory
+#PBS -l mem=80G 
+
+# Specify your email address to be notified of progress
+#PBS -M y.chang@centenary.org.au
+
+# To receive an email:
+#       - job is aborted: 'a' 
+#       - job begins execution: 'b'
+#       - job terminates: 'e'
+#       Note: Please ensure that the PBS -M option above is set.
+#PBS -m e
+
+# ~~~~~~~Load modules~~~~~~~~~~~~~~~~
+module load samtools/1.9
+module load gatk/4.1.9.0
+module load bcftools/1.9
+module load perl/5.28.0
+module load tabix/0.2.6
+
+# ~~~~~~Set variables~~~~~~~~~~~~~~~~
+scripts=/project/WGSHCM/Scripts
+scratch=/scratch/WGSHCM
+vcf=${scratch}/tempVCFs
+vcf_project=/project/WGSHCM/tempVCFs
+bamdir=${scratch}/tempBAMs
+
+# ~~~~~~~Commands to execute~~~~~~~~~
+
+# 5. GATK Haplotype caller
+
+mkdir -p ${scratch}/hc.${sample}
+
+echo "start HaplotypeCaller";
+echo 'puts [clock format [clock seconds] -format {%Y-%m-%d %T %Z} -timezone ":Australia/Sydney"]' | tclsh
+
+perl ${scripts}/VCGS_parallel_HaplotypeCaller_v2.pl -sample ${sample} -bamdir ${bamdir}
+
+echo "finish HaplotypeCaller";
+echo 'puts [clock format [clock seconds] -format {%Y-%m-%d %T %Z} -timezone ":Australia/Sydney"]' | tclsh
+
+if [ $? -eq 0 ]; then
+
+rm -r ${scratch}/hc.${sample}
+
+fi
+
+
+# 6. Concatenate vcfs
+
+echo "start Concatenate g.vcfs";
+echo 'puts [clock format [clock seconds] -format {%Y-%m-%d %T %Z} -timezone ":Australia/Sydney"]' | tclsh
+
+mkdir -p ${scratch}/bcf.${sample}
+
+bcftools concat \
+--allow-overlaps \
+--output ${vcf_project}/${sample}.g.vcf.gz \
+--output-type z \
+${vcf}/${sample}.0.g.vcf.gz \
+${vcf}/${sample}.1.g.vcf.gz \
+${vcf}/${sample}.2.g.vcf.gz \
+${vcf}/${sample}.3.g.vcf.gz \
+${vcf}/${sample}.4.g.vcf.gz \
+${vcf}/${sample}.5.g.vcf.gz \
+${vcf}/${sample}.6.g.vcf.gz \
+${vcf}/${sample}.7.g.vcf.gz 
+
+
+# cleanup vcf shards
+
+if [ $? -eq 0 ]; then
+
+rm -r ${scratch}/bcf.${sample}
+
+for i in {0..7}
+do
+	rm ${vcf}/${sample}.$i.g.vcf.gz
+	rm ${vcf}/${sample}.$i.g.vcf.gz.tbi
+done
+
+fi
+
+# tabix -p vcf ${vcf}/${sample}.g.vcf.gz
+tabix -p vcf ${vcf_project}/${sample}.g.vcf.gz
+
+echo "end Concatenate g.vcfs";
+echo 'puts [clock format [clock seconds] -format {%Y-%m-%d %T %Z} -timezone ":Australia/Sydney"]' | tclsh
+
+
+
+
+
+
