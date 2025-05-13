@@ -30,7 +30,6 @@ DQK2	DQK2	MicroGen	1
 DUO1	DUO1	MicroGen	1
 DUV1	DUV1	MicroGen	1
 DXO1	DXO1	MicroGen	1
-![image](https://github.com/user-attachments/assets/cc6ead4f-83ed-4dc0-8d4e-8375b029bc46)
 
 ```
 
@@ -43,7 +42,7 @@ DXO1	DXO1	MicroGen	1
 - **Reference**: GRCh38 (GCF_000001405.26, Dec 2013)
 - **Used by**: Both Gadi and Artemis workflows
 
-Command uses `bwa index` or equivalent. Sample metrics:
+Sample metrics:
 - Genome length: `6434693834`
 - Memory used: ~81 GB
 - NCPUs: 6
@@ -53,12 +52,11 @@ Command uses `bwa index` or equivalent. Sample metrics:
 
 ### 2. FastQC (Per-Sample Quality Check)
 
-**Command**: `fastqc -t 1 *.fastq.gz`
 
 - 22 FASTQ files (paired-end for 11 samples)
 - Initial run failed due to insufficient walltime
 - Each FastQC takes ~20–25 min per sample pair (with 1 thread)
-- Recommended: 8 NCPUs, 32 GB memory, ≥ 3 hours walltime
+- Recommended: 8 NCPUs, 32 GB memory, 25 min per sample walltime
 
 ---
 
@@ -69,11 +67,6 @@ Command uses `bwa index` or equivalent. Sample metrics:
 - Module: `multiqc/1.9`  
 - Scans FastQC outputs and generates `multiqc_report.html`  
 - Outputs stored in `MultiQC/FastQC/`
-
-```bash
-[INFO] multiqc : Found 44 reports
-[INFO] multiqc : Report : multiqc_report.html
-```
 
 ---
 
@@ -120,9 +113,8 @@ Checks integrity of splitting:
 
 ## 🔁 To Do Next
 
-- Add GATK/DeepVariant variant calling steps
+- Add DeepVariant variant calling steps
 - Add downstream filtering and annotation
-- Create `.pbs` scripts for each step
 
 ---
 
