@@ -17,20 +17,22 @@ The sample configuration file contains the following columns:
 
 **Example Configuration:**
 
+```
+SampleID	LabSampleID	Seq_centre	Lib
+ASX1	ASX1	MicroGen	1
+BCV1	BCV1	MicroGen	1
+BQE1	BQE1	MicroGen	1
+BVX1	BVX1	MicroGen	1
+CPN1	CPN1	MicroGen	1
+CUX1	CUX1	MicroGen	1
+CWX1	CWX1	MicroGen	1
+DQK2	DQK2	MicroGen	1
+DUO1	DUO1	MicroGen	1
+DUV1	DUV1	MicroGen	1
+DXO1	DXO1	MicroGen	1
+![image](https://github.com/user-attachments/assets/cc6ead4f-83ed-4dc0-8d4e-8375b029bc46)
 
-| SampleID | LabSampleID | Seq_centre | Lib |
-| --- | --- |
-| ASX1 | ASX1 | MicroGen | 1 |
-| BCV1 | BCV1 | MicroGen | 1 |
-| BQE1 | BQE1 | MicroGen | 1 |
-| BVX1 | BVX1 | MicroGen | 1 |
-| CPN1 | CPN1 | MicroGen | 1 |
-| CUX1 | CUX1 | MicroGen | 1 |
-| CWX1 | CWX1 | MicroGen | 1 |
-| DQK2 | DQK2 | MicroGen | 1 |
-| DUO1 | DUO1 | MicroGen | 1 |
-| DUV1 | DUV1 | MicroGen | 1 |
-| DXO1 | DXO1 | MicroGen | 1 |
+```
 
 ---
 
@@ -71,9 +73,63 @@ Command uses `bwa index` or equivalent. Sample metrics:
 ```bash
 [INFO] multiqc : Found 44 reports
 [INFO] multiqc : Report : multiqc_report.html
+```
 
-4.	Split FastQ check
-This step ensures R1/R2 files per each sample have equal number of reads, that the splitting process has not introduced any errors.
+---
 
-5.	Sequence alignment
-Alignment is performed with bwa-mem2. The K value is applied to ensure thread count does not affect alignment output due to random seeding.
+### 4. Splitting FASTQ Files (for Parallel Processing)
+
+**Tool**: `fastp v0.20.0`
+
+- Splits paired-end reads for optimized HPC use
+- Target: 10 million paired-end reads per file
+- Split file size: **40 million lines** (based on SIH recommendation)
+- Each task (~12 CPUs) needs ~40 GB RAM and ~15 min on Gadi
+
+---
+
+### 5. Split FastQ Check
+
+Checks integrity of splitting:
+- Ensures paired files (R1/R2) have equal read counts
+- Validates no errors introduced during splitting
+
+---
+
+### 6. Sequence Alignment
+
+**Tool**: `bwa-mem2`
+
+- `-K` option ensures deterministic output regardless of thread count
+- Output format: `.bam` files
+- Proper resource allocation (memory, threads) is critical
+
+---
+
+## 💡 HPC Resource Sample (Gadi)
+
+| Resource       | Value             |
+|----------------|------------------|
+| Walltime       | 01:26:52          |
+| CPUs Used      | 6                 |
+| Memory Used    | 81.1 GB (out of 192 GB) |
+| Project ID     | `ut47`           |
+| SU Consumption | 26.06 SU          |
+
+---
+
+## 🔁 To Do Next
+
+- Add GATK/DeepVariant variant calling steps
+- Add downstream filtering and annotation
+- Create `.pbs` scripts for each step
+
+---
+
+## 📌 Notes
+
+- This workflow currently benchmarks differences between Artemis and Gadi for WGS.
+- Ensure module versions match across systems for reproducibility.
+- Consider containerizing the pipeline using Singularity or Docker for portability.
+
+---
